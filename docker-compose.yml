@@ -1,8 +1,8 @@
 services:
   horametre:
-    build: .
+    image: ghcr.io/aerya/horametre:latest
     container_name: horametre
-    restart: unless-stopped
+    restart: always
     ports:
       - "8080:3000"
     environment:
