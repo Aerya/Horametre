@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horamètre — Connexion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>">
+    <style>
+        :root {
+            --bg-primary: #0b0d17;
+            --accent-primary: #6366f1;
+            --accent-light: #818cf8;
+            --accent-dark: #4f46e5;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(255, 255, 255, 0.06);
+            --border-focus: rgba(99, 102, 241, 0.5);
+            --error: #ef4444;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 70%);
+            animation: bgFloat 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes bgFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            33% {
+                transform: translate(-2%, 1%) rotate(1deg);
+            }
+
+            66% {
+                transform: translate(1%, -1%) rotate(-0.5deg);
+            }
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particleFloat 8s infinite;
+        }
+
+        .particle:nth-child(1) {
+            left: 15%;
+            animation-delay: 0s;
+            animation-duration: 10s;
+        }
+
+        .particle:nth-child(2) {
+            left: 35%;
+            animation-delay: 2s;
+            animation-duration: 12s;
+        }
+
+        .particle:nth-child(3) {
+            left: 55%;
+            animation-delay: 4s;
+            animation-duration: 9s;
+        }
+
+        .particle:nth-child(4) {
+            left: 75%;
+            animation-delay: 1s;
+            animation-duration: 11s;
+        }
+
+        .particle:nth-child(5) {
+            left: 90%;
+            animation-delay: 3s;
+            animation-duration: 8s;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.4;
+            }
+
+            90% {
+                opacity: 0.1;
+            }
+
+            100% {
+                transform: translateY(-10vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Login card */
+        .login-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            padding: 48px 40px;
+            background: rgba(17, 20, 39, 0.7);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow:
+                0 8px 40px rgba(0, 0, 0, 0.5),
+                0 0 80px rgba(99, 102, 241, 0.06);
+            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Logo */
+        .login-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 36px;
+        }
+
+        .login-logo-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 24px rgba(99, 102, 241, 0.35);
+            margin-bottom: 20px;
+            animation: logoGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlow {
+            from {
+                box-shadow: 0 4px 24px rgba(99, 102, 241, 0.25);
+            }
+
+            to {
+                box-shadow: 0 4px 32px rgba(99, 102, 241, 0.45);
+            }
+        }
+
+        .login-logo-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 4px;
+        }
+
+        .login-logo-title .accent {
+            background: linear-gradient(135deg, var(--accent-light), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-logo-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Form */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+        }
+
+        .form-input-wrapper {
+            position: relative;
+        }
+
+        .form-input-wrapper svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 14px 14px 44px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: var(--font);
+            font-size: 0.95rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .form-input:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .form-input:focus+svg,
+        .form-input:focus~svg {
+            color: var(--accent-light);
+        }
+
+        .form-input-wrapper:focus-within svg {
+            color: var(--accent-light);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-dark));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: var(--font);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(99, 102, 241, 0.45);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-login .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        .btn-login.loading .spinner {
+            display: block;
+        }
+
+        .btn-login.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error message */
+        .login-error {
+            display: none;
+            padding: 12px 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 10px;
+            color: var(--error);
+            font-size: 0.85rem;
+            text-align: center;
+            animation: errorShake 0.4s ease;
+        }
+
+        .login-error.visible {
+            display: block;
+        }
+
+        @keyframes errorShake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-6px);
+            }
+
+            50% {
+                transform: translateX(6px);
+            }
+
+            75% {
+                transform: translateX(-3px);
+            }
+        }
+
+        /* Footer */
+        .login-footer {
+            margin-top: 28px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                margin: 16px;
+                padding: 36px 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="login-logo-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                    <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+                </svg>
+            </div>
+            <h1 class="login-logo-title">Hora<span class="accent">mètre</span></h1>
+            <p class="login-logo-subtitle">Calculateur d'heures · CCN Jardineries</p>
+        </div>
+
+        <form class="login-form" id="login-form">
+            <div class="form-group">
+                <label class="form-label" for="password">Mot de passe</label>
+                <div class="form-input-wrapper">
+                    <input type="password" id="password" class="form-input" placeholder="Entrez votre mot de passe"
+                        autocomplete="current-password" autofocus>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0110 0v4" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="login-error" id="login-error">Mot de passe incorrect</div>
+
+            <button type="submit" class="btn-login" id="btn-login">
+                <span class="btn-text">Se connecter</span>
+                <div class="spinner"></div>
+            </button>
+        </form>
+
+        <div class="login-footer">
+            Horamètre · Gestion des heures de travail
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const errorEl = document.getElementById('login-error');
+        const btn = document.getElementById('btn-login');
+        const passwordInput = document.getElementById('password');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.classList.remove('visible');
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: passwordInput.value })
+                });
+
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    const data = await res.json();
+                    errorEl.textContent = data.error || 'Mot de passe incorrect';
+                    errorEl.classList.add('visible');
+                    passwordInput.select();
+                }
+            } catch (err) {
+                errorEl.textContent = 'Erreur de connexion au serveur';
+                errorEl.classList.add('visible');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

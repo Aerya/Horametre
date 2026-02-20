@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horamètre — Calculateur d'heures de travail</title>
+    <meta name="description"
+        content="Horamètre — Calculateur d'heures de travail avec les règles du Code du travail français. Format 24h, heures supplémentaires, jours fériés, export PDF.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>">
+</head>
+
+<body>
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                            <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="logo-title">Hora<span class="accent">mètre</span></h1>
+                        <p class="logo-subtitle">Calculateur · CCN Jardineries</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-ghost btn-logout" id="btn-logout" title="Déconnexion" style="display:none">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                    </button>
+                    <button class="btn btn-ghost" id="theme-toggle" title="Mode sombre/clair">
+                        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" style="display:none;">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+                    <button class="btn btn-ghost" id="btn-employees">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                            <path d="M16 3.13a4 4 0 010 7.75" />
+                        </svg>
+                        Employés
+                        <span class="badge" id="employee-count">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Config Panel -->
+            <section class="card config-panel" id="config-panel">
+                <div class="config-grid">
+                    <!-- Date Range -->
+                    <div class="config-group">
+                        <label class="config-label">Période</label>
+                        <div class="range-buttons">
+                            <button class="range-btn active" data-range="week">Semaine</button>
+                            <button class="range-btn" data-range="month">Mois</button>
+                            <button class="range-btn" data-range="custom">Personnalisé</button>
+                        </div>
+                        <div class="date-inputs">
+                            <div class="input-group">
+                                <label class="input-label">Du</label>
+                                <input type="date" id="date-start" class="input">
+                            </div>
+                            <span class="date-separator">→</span>
+                            <div class="input-group">
+                                <label class="input-label">Au</label>
+                                <input type="date" id="date-end" class="input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employee & Salary -->
+                    <div class="config-group">
+                        <label class="config-label">Employé</label>
+                        <div class="info-inputs">
+                            <div class="employee-selector-row">
+                                <div class="input-group" style="flex:1">
+                                    <select id="employee-select" class="input employee-select">
+                                        <option value="">— Sélectionner —</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-sm btn-accent" id="btn-add-employee" title="Nouvel employé">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19" />
+                                        <line x1="5" y1="12" x2="19" y2="12" />
+                                    </svg>
+                                </button>
+                                <button class="btn btn-sm btn-ghost" id="btn-delete-employee"
+                                    title="Supprimer l'employé" style="display:none">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path
+                                            d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                    </svg>
+                                </button>
+                                <button class="btn btn-sm btn-merged" id="btn-merged-view"
+                                    title="Vue fusionnée de tous les plannings">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                                        <path d="M16 3.13a4 4 0 010 7.75" />
+                                    </svg>
+                                    Tous
+                                </button>
+                            </div>
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label class="input-label">Base contrat</label>
+                                    <div class="contract-base-toggle">
+                                        <button class="contract-btn active" data-base="35">35h</button>
+                                        <button class="contract-btn" data-base="39">39h</button>
+                                    </div>
+                                </div>
+                                <div class="input-group" style="flex:2">
+                                    <label class="input-label">Salaire brut mensuel</label>
+                                    <div class="input-with-suffix">
+                                        <input type="number" id="gross-salary" class="input" placeholder="0.00" min="0"
+                                            step="0.01">
+                                        <span class="input-suffix">€</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hourly-rate-display" id="hourly-rate-display" style="display:none">
+                                <span class="hourly-rate-label">Taux horaire calculé :</span>
+                                <span class="hourly-rate-value" id="hourly-rate-value">0.00 €/h</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Mode -->
+            <section class="card quick-mode-panel" id="quick-mode-panel">
+                <div class="quick-mode-header">
+                    <div class="quick-mode-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                        <span>Mode rapide</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="quick-mode-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="quick-mode-body" id="quick-mode-body">
+                    <p class="quick-mode-desc">Définissez des horaires types, puis cochez les jours travaillés.</p>
+                    <div class="quick-mode-inputs">
+                        <div class="input-group">
+                            <label class="input-label">Début</label>
+                            <input type="time" id="quick-start" class="input" value="10:00" step="60">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Fin</label>
+                            <input type="time" id="quick-end" class="input" value="19:00" step="60">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Pause</label>
+                            <div class="input-with-suffix">
+                                <input type="number" id="quick-break" class="input" value="60" min="0" max="480"
+                                    step="5">
+                                <span class="input-suffix">min</span>
+                            </div>
+                        </div>
+                        <div class="input-group quick-mode-actions">
+                            <label class="input-label">&nbsp;</label>
+                            <button class="btn btn-sm btn-secondary" id="btn-quick-all" title="Cocher lun-ven">Lun →
+                                Ven</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- French Rules Info -->
+            <section class="rules-banner">
+                <div class="rules-content">
+                    <span class="rules-flag">🇫🇷</span>
+                    <div class="rules-text">
+                        <strong>CCN Jardineries & Graineteries (IDCC 1760)</strong>
+                        <span class="rules-details">
+                            Dimanche +50% · Jour férié +100% · Heures sup. +25% (36e-43e h), +50% (au-delà) · Max
+                            10h/jour · Max 48h/semaine
+                        </span>
+                        <div class="rules-links">
+                            <a href="https://www.legifrance.gouv.fr/conv_coll/id/KALICONT000005635938" target="_blank"
+                                rel="noopener">📜 Légifrance</a>
+                            <a href="https://www.pappers.fr/conventions-collectives/jardinerie" target="_blank"
+                                rel="noopener">📋 Pappers</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Time Entry Table -->
+            <section class="card table-card">
+                <div class="table-header">
+                    <h2 class="section-title">Saisie des heures</h2>
+                    <div class="table-actions">
+                        <div class="view-toggle">
+                            <button class="view-btn active" data-view="list" title="Vue liste">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6" />
+                                    <line x1="8" y1="12" x2="21" y2="12" />
+                                    <line x1="8" y1="18" x2="21" y2="18" />
+                                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                                </svg>
+                            </button>
+                            <button class="view-btn" data-view="grid" title="Vue semaine">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="3" y1="9" x2="21" y2="9" />
+                                    <line x1="9" y1="21" x2="9" y2="9" />
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="btn btn-sm btn-ghost" id="btn-clear" title="Effacer toutes les saisies">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                            </svg>
+                            Effacer
+                        </button>
+                    </div>
+                </div>
+                <!-- List view -->
+                <div class="table-wrapper" id="list-view">
+                    <table class="entries-table">
+                        <thead>
+                            <tr>
+                                <th class="th-check" id="th-check" style="display:none;"></th>
+                                <th class="th-day">Jour</th>
+                                <th class="th-time">Début</th>
+                                <th class="th-time">Fin</th>
+                                <th class="th-break">Pause</th>
+                                <th class="th-hours">Heures</th>
+                            </tr>
+                        </thead>
+                        <tbody id="entries-body"></tbody>
+                    </table>
+                </div>
+                <!-- Grid view -->
+                <div class="grid-wrapper" id="grid-view" style="display:none;">
+                    <div class="week-nav">
+                        <button class="btn btn-sm btn-ghost" id="btn-prev-week">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                            Préc.
+                        </button>
+                        <span class="week-nav-label" id="week-nav-label">Semaine X</span>
+                        <button class="btn btn-sm btn-ghost" id="btn-next-week">
+                            Suiv.
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="weeks-grid" id="weeks-grid"></div>
+                </div>
+                <div class="table-footer">
+                    <div class="total-row">
+                        <span class="total-label">Total heures travaillées</span>
+                        <span class="total-value" id="total-hours">0h00</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Warnings -->
+            <section class="card warnings-card" id="warnings-panel" style="display:none;"></section>
+
+            <!-- Results -->
+            <section class="card results-card">
+                <h2 class="section-title">Résultats</h2>
+                <div id="summary-panel"></div>
+                <div id="pay-detail-panel" class="pay-detail-panel" style="display:none"></div>
+                <div id="weekly-breakdown" class="weekly-breakdown"></div>
+            </section>
+
+            <!-- Action Bar -->
+            <section class="action-bar">
+                <button class="btn btn-primary" id="btn-pdf">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    Imprimer / PDF
+                </button>
+                <button class="btn btn-secondary" id="btn-print">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 6 2 18 2 18 9" />
+                        <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+                        <rect x="6" y="14" width="12" height="8" />
+                    </svg>
+                    Imprimer
+                </button>
+                <button class="btn btn-secondary" id="btn-share">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="18" cy="5" r="3" />
+                        <circle cx="6" cy="12" r="3" />
+                        <circle cx="18" cy="19" r="3" />
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                    </svg>
+                    Partager
+                </button>
+                <button class="btn btn-accent" id="btn-save">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Sauvegarder
+                </button>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>Horamètre — CCN Jardineries &amp; Graineteries (IDCC 1760) + Code du travail · Données stockées en base
+                SQLite
+            </p>
+        </div>
+    </footer>
+
+    <!-- Add Employee Modal -->
+    <div class="modal" id="add-employee-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                        <circle cx="8.5" cy="7" r="4" />
+                        <line x1="20" y1="8" x2="20" y2="14" />
+                        <line x1="23" y1="11" x2="17" y2="11" />
+                    </svg>
+                    Nouvel employé
+                </h2>
+                <button class="modal-close" id="modal-close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group" style="margin-bottom: 16px">
+                    <label class="input-label">Nom / Référence</label>
+                    <input type="text" id="new-employee-name" class="input" placeholder="Ex: Jean Dupont">
+                </div>
+                <button class="btn btn-accent" id="btn-confirm-add-employee" style="width:100%">Créer l'employé</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/french-rules.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+services:
+  horametre:
+    build: .
+    container_name: horametre
+    restart: unless-stopped
+    ports:
+      - "8080:3000"
+    environment:
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-horametre}
+    volumes:
+      - ./data:/app/data
