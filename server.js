@@ -9,6 +9,7 @@ const Database = require('better-sqlite3');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const ftp = require('basic-ftp');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -342,6 +343,50 @@ app.put('/api/settings', (req, res) => {
         updateMany(updates);
         res.json({ success: true });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// == Backup ==
+app.post('/api/backup', async (req, res) => {
+    try {
+        const backupDir = path.join(__dirname, 'data', 'backups');
+        fs.mkdirSync(backupDir, { recursive: true });
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const backupFileName = `workhours_${timestamp}.db`;
+        const backupPath = path.join(backupDir, backupFileName);
+
+        // SQLite safe backup
+        await db.backup(backupPath);
+
+        // FTP Upload
+        let ftpSuccess = false;
+        if (process.env.FTP_HOST && process.env.FTP_USER && process.env.FTP_PASS) {
+            const client = new ftp.Client();
+            try {
+                await client.access({
+                    host: process.env.FTP_HOST,
+                    user: process.env.FTP_USER,
+                    password: process.env.FTP_PASS,
+                    port: process.env.FTP_PORT ? parseInt(process.env.FTP_PORT) : 21,
+                    secure: process.env.FTP_SECURE === 'true'
+                });
+
+                const remotePath = process.env.FTP_PATH || '/';
+                await client.ensureDir(remotePath);
+                await client.uploadFrom(backupPath, backupFileName);
+                ftpSuccess = true;
+            } catch (ftpErr) {
+                console.error('FTP Error:', ftpErr);
+            } finally {
+                client.close();
+            }
+        }
+
+        res.json({ success: true, file: backupFileName, ftp: ftpSuccess });
+    } catch (err) {
+        console.error('Backup error:', err);
         res.status(500).json({ error: err.message });
     }
 });
