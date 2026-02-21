@@ -114,6 +114,19 @@ const App = (() => {
         return days;
     }
 
+    function populateMonthPicker() {
+        const picker = document.getElementById('month-picker');
+        if (!picker) return;
+        picker.innerHTML = '<option value="">— Mois —</option>';
+        const now = new Date();
+        for (let i = -12; i <= 12; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+            const val = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+            const label = `${d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`;
+            picker.innerHTML += `<option value="${val}">${capitalizeFirst(label)}</option>`;
+        }
+    }
+
     // --- Initialize ---
     async function init() {
         // Check auth status
@@ -141,6 +154,7 @@ const App = (() => {
         }
 
         applyTheme();
+        populateMonthPicker();
         setupDateRange('month');
         setupEventListeners();
 
@@ -178,7 +192,13 @@ const App = (() => {
             // If month mode, sync the month picker
             if (mode === 'month') {
                 const monthVal = `${start.getFullYear()}-${(start.getMonth() + 1).toString().padStart(2, '0')}`;
-                document.getElementById('month-picker').value = monthVal;
+                const mp = document.getElementById('month-picker');
+                if (mp && mp.querySelector(`option[value="${monthVal}"]`)) {
+                    mp.value = monthVal;
+                }
+            } else {
+                const mp = document.getElementById('month-picker');
+                if (mp) mp.value = '';
             }
         }
         initEntries();
@@ -230,8 +250,6 @@ const App = (() => {
 
                 // Deselect other range buttons and select month
                 document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
-                const monthBtn = document.querySelector('.range-btn[data-range="month"]');
-                if (monthBtn) monthBtn.classList.add('active');
 
                 const [year, month] = val.split('-').map(Number);
                 const start = new Date(year, month - 1, 1);
@@ -243,8 +261,12 @@ const App = (() => {
                 document.getElementById('date-start').value = formatDate(start);
                 document.getElementById('date-end').value = formatDate(end);
 
-                initEntries();
-                await loadCurrentEntries();
+                if (state.mergedView) {
+                    await loadMergedEntries();
+                } else {
+                    initEntries();
+                    await loadCurrentEntries();
+                }
             });
         }
 
@@ -307,6 +329,19 @@ const App = (() => {
 
         // Merged view
         document.getElementById('btn-merged-view').addEventListener('click', async () => {
+            if (state.saving) return;
+            if (state.currentEmployeeId) {
+                // Try to auto-save any entered values before merging
+                const toSave = state.entries.filter(e => e.start || e.end || e.breakDuration);
+                if (toSave.length > 0) {
+                    try {
+                        await API.saveEntries(state.currentEmployeeId, toSave);
+                    } catch (e) {
+                        console.warn("Auto-save failed before merge", e);
+                    }
+                }
+            }
+
             state.mergedView = !state.mergedView;
             document.getElementById('btn-merged-view').classList.toggle('active', state.mergedView);
             if (state.mergedView) {
@@ -568,21 +603,38 @@ const App = (() => {
 
             // Group by employee for results
             const byEmployee = {};
+            for (const emp of state.employees) {
+                byEmployee[emp.name] = {
+                    name: emp.name,
+                    salary: emp.gross_monthly_salary,
+                    contractBase: emp.contract_base,
+                    entries: []
+                };
+            }
+
             for (const entry of allEntries) {
-                if (!byEmployee[entry.employee_name]) {
+                if (byEmployee[entry.employee_name]) {
+                    byEmployee[entry.employee_name].entries.push({
+                        date: entry.date,
+                        start: entry.start,
+                        end: entry.end,
+                        breakDuration: entry.break_duration
+                    });
+                } else {
+                    // This case should ideally not happen if state.employees is up-to-date
+                    // but adding a fallback just in case an entry exists for an unknown employee.
                     byEmployee[entry.employee_name] = {
                         name: entry.employee_name,
                         salary: entry.gross_monthly_salary,
                         contractBase: entry.contract_base,
-                        entries: []
+                        entries: [{
+                            date: entry.date,
+                            start: entry.start,
+                            end: entry.end,
+                            breakDuration: entry.break_duration
+                        }]
                     };
                 }
-                byEmployee[entry.employee_name].entries.push({
-                    date: entry.date,
-                    start: entry.start,
-                    end: entry.end,
-                    breakDuration: entry.break_duration
-                });
             }
 
             renderMergedView(byEmployee);
@@ -599,7 +651,7 @@ const App = (() => {
         const employeeNames = Object.keys(byEmployee);
 
         if (employeeNames.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; opacity:0.5; padding:24px;">Aucun employé avec des heures saisies sur cette période</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; opacity:0.5; padding:24px;">Aucun employé configuré</td></tr>';
             return;
         }
 
@@ -620,50 +672,48 @@ const App = (() => {
                 const color = EMPLOYEE_COLORS[empIdx % EMPLOYEE_COLORS.length];
                 const hoursWorked = entry ? FrenchRules.calculateDailyHours(entry) : 0;
 
-                if (!entry && !hasAnyEntry && empIdx === employeeNames.length - 1) {
-                    // No employee has hours for this day → show off row
+                if (hoursWorked > 0) {
+                    hasAnyEntry = true;
                     const tr = document.createElement('tr');
-                    tr.classList.add('day-off-row');
                     if (holiday) tr.classList.add('holiday-row');
                     if (isSunday) tr.classList.add('sunday-row');
                     if (isSaturday) tr.classList.add('saturday-row');
-                    if (date === days[0] || dateObj.getDay() === 1) {
-                        const prevDate = days.indexOf(date) > 0 ? parseDateLocal(days[days.indexOf(date) - 1]) : null;
-                        if (prevDate && prevDate.getDay() !== 0) tr.classList.add('week-start');
-                    }
 
                     tr.innerHTML = `
                         <td class="cell-day">
                             <span class="day-name">${capitalizeFirst(dayName)}</span>
                             <span class="day-date">${dateDisplay}</span>
-                            ${holiday ? `<span class="holiday-badge" title="${holiday.name}">🏴 ${holiday.name}</span>` : ''}
+                            <span class="merged-employee-badge" style="background:${color}20; color:${color}; border: 1px solid ${color}40;">${empName}</span>
+                            ${holiday ? `<span class="holiday-badge" title="${holiday.name}">🏴</span>` : ''}
                         </td>
-                        <td class="cell-time" colspan="3" style="text-align:center; opacity:0.4;">—</td>
-                        <td class="cell-hours">-</td>
+                        <td class="cell-time">${entry.start || '-'}</td>
+                        <td class="cell-time">${entry.end || '-'}</td>
+                        <td class="cell-break">${entry.breakDuration || 0} min</td>
+                        <td class="cell-hours has-hours">${FrenchRules.formatHours(hoursWorked)}</td>
                     `;
                     tbody.appendChild(tr);
-                    continue;
                 }
+            }
 
-                if (!entry || hoursWorked === 0) continue;
-                hasAnyEntry = true;
-
+            if (!hasAnyEntry) {
                 const tr = document.createElement('tr');
+                tr.classList.add('day-off-row');
                 if (holiday) tr.classList.add('holiday-row');
                 if (isSunday) tr.classList.add('sunday-row');
                 if (isSaturday) tr.classList.add('saturday-row');
+                if (date === days[0] || dateObj.getDay() === 1) {
+                    const prevDate = days.indexOf(date) > 0 ? parseDateLocal(days[days.indexOf(date) - 1]) : null;
+                    if (prevDate && prevDate.getDay() !== 0) tr.classList.add('week-start');
+                }
 
                 tr.innerHTML = `
                     <td class="cell-day">
                         <span class="day-name">${capitalizeFirst(dayName)}</span>
                         <span class="day-date">${dateDisplay}</span>
-                        <span class="merged-employee-badge" style="background:${color}20; color:${color}; border: 1px solid ${color}40;">${empName}</span>
-                        ${holiday ? `<span class="holiday-badge" title="${holiday.name}">🏴</span>` : ''}
+                        ${holiday ? `<span class="holiday-badge" title="${holiday.name}">🏴 ${holiday.name}</span>` : ''}
                     </td>
-                    <td class="cell-time">${entry.start || '-'}</td>
-                    <td class="cell-time">${entry.end || '-'}</td>
-                    <td class="cell-break">${entry.breakDuration || 0} min</td>
-                    <td class="cell-hours has-hours">${FrenchRules.formatHours(hoursWorked)}</td>
+                    <td class="cell-time" colspan="3" style="text-align:center; opacity:0.4;">—</td>
+                    <td class="cell-hours">-</td>
                 `;
                 tbody.appendChild(tr);
             }

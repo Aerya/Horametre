@@ -92,8 +92,11 @@
                         <div class="range-buttons">
                             <button class="range-btn active" data-range="week">Semaine</button>
                             <button class="range-btn" data-range="month">Mois en cours</button>
-                            <input type="month" id="month-picker" class="input" style="width: auto; padding: 4px 8px; margin-left: 5px;" title="Choisir un mois spécifique">
-                            <button class="range-btn" data-range="custom" style="margin-left: 5px;">Personnalisé</button>
+                            <select id="month-picker" class="input"
+                                style="width: auto; padding: 4px 8px; margin-left: 5px;" title="Choisir un mois">
+                                <option value="">— Mois —</option>
+                            </select>
+                            <button class="range-btn" data-range="custom" style="margin-left: 5px;">Période</button>
                         </div>
                         <div class="date-inputs">
                             <div class="input-group">
