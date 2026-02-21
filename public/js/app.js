@@ -167,8 +167,19 @@ const App = (() => {
         if (start && end) {
             state.dateRange.start = start;
             state.dateRange.end = end;
-            document.getElementById('date-start').value = formatDate(start);
-            document.getElementById('date-end').value = formatDate(end);
+
+            // Format dates for inputs
+            const startStr = formatDate(start);
+            const endStr = formatDate(end);
+
+            document.getElementById('date-start').value = startStr;
+            document.getElementById('date-end').value = endStr;
+
+            // If month mode, sync the month picker
+            if (mode === 'month') {
+                const monthVal = `${start.getFullYear()}-${(start.getMonth() + 1).toString().padStart(2, '0')}`;
+                document.getElementById('month-picker').value = monthVal;
+            }
         }
         initEntries();
     }
@@ -209,6 +220,33 @@ const App = (() => {
             initEntries();
             await loadCurrentEntries();
         });
+
+        // Month picker
+        const monthPicker = document.getElementById('month-picker');
+        if (monthPicker) {
+            monthPicker.addEventListener('change', async (e) => {
+                const val = e.target.value;
+                if (!val) return;
+
+                // Deselect other range buttons and select month
+                document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+                const monthBtn = document.querySelector('.range-btn[data-range="month"]');
+                if (monthBtn) monthBtn.classList.add('active');
+
+                const [year, month] = val.split('-').map(Number);
+                const start = new Date(year, month - 1, 1);
+                const end = new Date(year, month, 0);
+
+                state.dateRange.start = start;
+                state.dateRange.end = end;
+
+                document.getElementById('date-start').value = formatDate(start);
+                document.getElementById('date-end').value = formatDate(end);
+
+                initEntries();
+                await loadCurrentEntries();
+            });
+        }
 
         // Employee selector
         document.getElementById('employee-select').addEventListener('change', async (e) => {
@@ -341,6 +379,32 @@ const App = (() => {
         document.getElementById('btn-pdf')?.addEventListener('click', printPlanning);
         document.getElementById('btn-print')?.addEventListener('click', printPlanning);
         document.getElementById('btn-share')?.addEventListener('click', shareResults);
+
+        // Backup
+        document.getElementById('btn-backup')?.addEventListener('click', async () => {
+            try {
+                const btn = document.getElementById('btn-backup');
+                const svg = btn.innerHTML;
+                btn.innerHTML = 'Progression...';
+                btn.disabled = true;
+
+                const res = await fetch('/api/backup', { method: 'POST' });
+                const json = await res.json();
+
+                btn.innerHTML = svg;
+                btn.disabled = false;
+
+                if (res.ok && json.success) {
+                    showToast('Sauvegarde BDD réussie' + (json.ftp ? ' (+ FTP)' : ''), 'success');
+                } else {
+                    showToast('Erreur lors de la sauvegarde: ' + (json.error || 'Erreur inconnue'), 'error');
+                }
+            } catch (err) {
+                showToast('Erreur serveur pour la sauvegarde', 'error');
+                const btn = document.getElementById('btn-backup');
+                btn.disabled = false;
+            }
+        });
 
         // Modal
         document.getElementById('modal-close').addEventListener('click', closeModal);
@@ -1276,6 +1340,28 @@ const App = (() => {
     // --- PDF Export ---
     // --- Print Planning ---
     function printPlanning() {
+        // Validation: Must be a complete month
+        if (!state.dateRange.start || !state.dateRange.end) {
+            showToast("Veuillez définir une période d'abord", "warning");
+            return;
+        }
+
+        const start = state.dateRange.start;
+        const end = state.dateRange.end;
+
+        // Check if start is 1st of month
+        const isStartFirst = start.getDate() === 1;
+        // Check if end is last day of same month and year
+        const lastDayOfMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+        const isEndLast = end.getDate() === lastDayOfMonth &&
+            end.getMonth() === start.getMonth() &&
+            end.getFullYear() === start.getFullYear();
+
+        if (!isStartFirst || !isEndLast) {
+            showToast("L'impression/PDF n'est permise que pour un mois complet.", "warning");
+            return;
+        }
+
         // 1. Remove existing print section if any
         const existing = document.getElementById('print-section');
         if (existing) existing.remove();

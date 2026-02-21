@@ -25,6 +25,8 @@ const FrenchRules = (() => {
         sundayPremiumRate: 0.50,    // +50% du taux horaire de base
         holidayPremiumRate: 1.00,   // +100% du taux horaire de base
         contractBases: {
+            24: 104.00,  // heures mensuelles pour un contrat 24h
+            32: 138.67,  // heures mensuelles pour un contrat 32h
             35: 151.67,  // heures mensuelles pour un contrat 35h
             39: 169.00   // heures mensuelles pour un contrat 39h (151.67 + 17.33)
         },

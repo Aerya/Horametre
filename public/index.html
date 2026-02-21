@@ -91,8 +91,9 @@
                         <label class="config-label">Période</label>
                         <div class="range-buttons">
                             <button class="range-btn active" data-range="week">Semaine</button>
-                            <button class="range-btn" data-range="month">Mois</button>
-                            <button class="range-btn" data-range="custom">Personnalisé</button>
+                            <button class="range-btn" data-range="month">Mois en cours</button>
+                            <input type="month" id="month-picker" class="input" style="width: auto; padding: 4px 8px; margin-left: 5px;" title="Choisir un mois spécifique">
+                            <button class="range-btn" data-range="custom" style="margin-left: 5px;">Personnalisé</button>
                         </div>
                         <div class="date-inputs">
                             <div class="input-group">
@@ -148,6 +149,8 @@
                                 <div class="input-group">
                                     <label class="input-label">Base contrat</label>
                                     <div class="contract-base-toggle">
+                                        <button class="contract-btn" data-base="24">24h</button>
+                                        <button class="contract-btn" data-base="32">32h</button>
                                         <button class="contract-btn active" data-base="35">35h</button>
                                         <button class="contract-btn" data-base="39">39h</button>
                                     </div>
@@ -361,6 +364,14 @@
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
                     Sauvegarder
+                </button>
+                <button class="btn btn-secondary" id="btn-backup" title="Sauvegarder la base de données">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Backup BDD
                 </button>
             </section>
         </div>
